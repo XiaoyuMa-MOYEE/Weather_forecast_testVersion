@@ -1,4 +1,4 @@
-import requests
+
 #旧代码
 '''
 ## 使用API获得数据的旧代码
