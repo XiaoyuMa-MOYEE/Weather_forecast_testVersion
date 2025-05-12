@@ -89,7 +89,7 @@ def get_weather_forecast(city,max_day):
             # 选取12:00或默认第一条
             mid = next((x for x in items if "12:00" in x[0]), items[0])
             #测试语句
-            # print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]},降水率:{mid[5]}")
+            print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]},降水率:{mid[5]}")
 
             result["forecast"].append({
                 "date": date,
