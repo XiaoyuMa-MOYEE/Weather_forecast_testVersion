@@ -88,7 +88,8 @@ def get_weather_forecast(city,max_day):
         for date, items in list(forecast_by_day.items())[:max_day]:  # 最多5天
             # 选取12:00或默认第一条
             mid = next((x for x in items if "12:00" in x[0]), items[0])
-            print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]},降水率:{mid[5]}")
+            #测试语句
+            # print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]},降水率:{mid[5]}")
 
             result["forecast"].append({
                 "date": date,
@@ -105,3 +106,5 @@ def get_weather_forecast(city,max_day):
         print(f"网络请求失败：请检查网络链接\n{e}")
         return None
     #返回失败的返回值
+
+#数据可视化
