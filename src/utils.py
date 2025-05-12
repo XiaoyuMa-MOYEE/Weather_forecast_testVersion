@@ -73,8 +73,10 @@ def get_weather_forecast(city,max_day):
             speed = item["wind"]["speed"]
             #湿度
             humidity = item["main"]["humidity"]
+            #降水率
+            pop = item.get("pop", 0)
             time = item["dt_txt"]
-            forecast_by_day[date].append((time, temp, desc,speed,humidity))
+            forecast_by_day[date].append((time, temp, desc,speed,humidity,pop))
 
 
         # 输出每日天气（优先取 12:00 的数据）
@@ -86,7 +88,7 @@ def get_weather_forecast(city,max_day):
         for date, items in list(forecast_by_day.items())[:max_day]:  # 最多5天
             # 选取12:00或默认第一条
             mid = next((x for x in items if "12:00" in x[0]), items[0])
-            # print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]}")
+            print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]},降水率:{mid[5]}")
 
             result["forecast"].append({
                 "date": date,
@@ -94,7 +96,8 @@ def get_weather_forecast(city,max_day):
                 "temperature": mid[1],
                 "description": mid[2],
                 "speed": mid[3],
-                "humidity": mid[4]
+                "humidity": mid[4],
+                "pop": mid[5]
 
             })
         return result
