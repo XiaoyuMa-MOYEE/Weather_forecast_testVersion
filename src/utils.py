@@ -32,6 +32,11 @@ from collections import defaultdict
 
 #获取天气数据（返回JSON数据）
 def get_weather_forecast(city,max_day):
+    """
+    每个函数需要包含一个文档描述，其中包含函数说明，输入和输出示例
+    :param city:城市名称
+    :param max_day:1-5的正整数
+    """
     #api's key
     api_key = "56d26083c4e5d4828784871da1b7b0b3"
     #api
@@ -49,7 +54,7 @@ def get_weather_forecast(city,max_day):
         response.raise_for_status()
         data = response.json()
         #尝试输出
-        print(data)
+        # print(data)
 
         if response.status_code != 200:
             print("请求失败:", data.get("message", "未知错误"))
@@ -65,13 +70,15 @@ def get_weather_forecast(city,max_day):
             #描述
             desc = item["weather"][0]["description"]
             #风速
-        
+            speed = item["wind"]["speed"]
+            #湿度
+            humidity = item["main"]["humidity"]
             time = item["dt_txt"]
-            forecast_by_day[date].append((time, temp, desc))
+            forecast_by_day[date].append((time, temp, desc,speed,humidity))
 
 
         # 输出每日天气（优先取 12:00 的数据）
-        print(f"城市：{data['city']['name']}\n")
+        # print(f"城市：{data['city']['name']}")
         result = {
             "city": data["city"]["name"],
             "forecast": []
@@ -79,13 +86,16 @@ def get_weather_forecast(city,max_day):
         for date, items in list(forecast_by_day.items())[:max_day]:  # 最多5天
             # 选取12:00或默认第一条
             mid = next((x for x in items if "12:00" in x[0]), items[0])
-            # print(f"{date}：{mid[2]}，{mid[1]}°C")
+            # print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]}")
 
             result["forecast"].append({
                 "date": date,
                 "time": mid[0],
+                "temperature": mid[1],
                 "description": mid[2],
-                "temperature": mid[1]
+                "speed": mid[3],
+                "humidity": mid[4]
+
             })
         return result
     except requests.exceptions.RequestException as e:  # 捕获所有requests相关的异常
