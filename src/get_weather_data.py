@@ -1,4 +1,4 @@
-#旧的用于获取天气的api代码
+# 旧的用于获取天气的api代码
 '''
 ## 使用API获得数据的旧代码
 # def test_of_data():
@@ -27,33 +27,30 @@
 #         print(f"{date}: {description}, {mintemp}°C ~ {maxtemp}°C")
 #         print(len(data['weather']))
 '''
-import requests
 from collections import defaultdict
 
-#获取天气数据（返回JSON数据）
-def get_weather_forecast(city,max_day):
+import requests
+
+
+# 获取天气数据（返回JSON数据）
+def get_weather_forecast(city, max_day):
     """
     每个函数需要包含一个文档描述，其中包含函数说明，输入和输出示例
     :param city:城市名称
     :param max_day:1-5的正整数
     """
-    #api's key
+    # api's key
     api_key = "56d26083c4e5d4828784871da1b7b0b3"
-    #api
+    # api
     url = "https://api.openweathermap.org/data/2.5/forecast"
-    params = {
-        "q": city,
-        "appid": api_key,
-        "units": "metric",
-        "lang": "zh_cn"
-        #todo:修改语言
-    }
+    params = {"q": city, "appid": api_key, "units": "metric", "lang": "zh_cn"  # todo:修改语言
+              }
     try:
         response = requests.get(url, params=params)
-        #若无响应则抛出异常
+        # 若无响应则抛出异常
         response.raise_for_status()
         data = response.json()
-        #尝试输出
+        # 尝试输出
         # print(data)
 
         if response.status_code != 200:
@@ -63,51 +60,37 @@ def get_weather_forecast(city,max_day):
         # 按天整理每3小时的天气数据
         forecast_by_day = defaultdict(list)
         for item in data["list"]:
-            #日期
+            # 日期
             date = item["dt_txt"].split(" ")[0]
-            #温度
+            # 温度
             temp = item["main"]["temp"]
-            #描述
+            # 描述
             desc = item["weather"][0]["description"]
-            #风速
+            # 风速
             speed = item["wind"]["speed"]
-            #湿度
+            # 湿度
             humidity = item["main"]["humidity"]
-            #降水率
+            # 降水率
             pop = item.get("pop", 0)
             time = item["dt_txt"]
-            forecast_by_day[date].append((time, temp, desc,speed,humidity,pop))
-
+            forecast_by_day[date].append((time, temp, desc, speed, humidity, pop))
 
         # 输出每日天气（优先取 12:00 的数据）
         # print(f"城市：{data['city']['name']}")
-        result = {
-            "city": data["city"]["name"],
-            "forecast": []
-        }
+        result = {"city": data["city"]["name"], "forecast": []}
         for date, items in list(forecast_by_day.items())[:max_day]:  # 最多5天
             # 选取12:00或默认第一条
             mid = next((x for x in items if "12:00" in x[0]), items[0])
-            #测试语句
-            print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]},降水率:{mid[5]}")
+            # 测试语句
+            # print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]},降水率:{mid[5]}")
 
-            result["forecast"].append({
-                "date": date,
-                "time": mid[0],
-                "temperature": mid[1],
-                "description": mid[2],
-                "speed": mid[3],
-                "humidity": mid[4],
-                "pop": mid[5]
+            result["forecast"].append(
+                {"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+                 "humidity": mid[4], "pop": mid[5]
 
-            })
+                 })
 
-
-
-        return result,forecast_by_day #result 是天气概述，data是具体天气数据，用于获得折线图
+        return result, forecast_by_day  # result 是天气概述，data是具体天气数据，用于获得折线图
     except requests.exceptions.RequestException as e:  # 捕获所有requests相关的异常
         print(f"网络请求失败：请检查网络链接\n{e}")
-        return None
-    #返回失败的返回值
-
-
+        return None  # 返回失败的返回值
