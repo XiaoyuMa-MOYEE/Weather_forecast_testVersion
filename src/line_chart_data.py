@@ -69,27 +69,35 @@ def get_line_chart_data(questions, city, max_day):  # 传入参数
 
     def process_answer(answer):
         if answer == "pop":
-            return handle_pop()
+            index = 1
+            return handle_pop(),index
         elif answer == "describe":
-            return handle_describe()
+            index = 1
+            return handle_describe(),index
         elif answer == "cloth":
-            return handle_cloth()
+            index = 1
+            return handle_cloth(),index
         elif answer == "temperature":
-            return handle_temperature()
+            index = 1
+            return handle_temperature(),index
         elif answer == "wind":
-            return handle_wind()
+            index = 1
+            return handle_wind(),index
         elif answer == "humidity":
-            return handle_humidity()
+            index = 1
+            return handle_humidity(),index
         else:
+            index = 0
             lines = ["您的问题有些模糊。给您提供全部数据的简单描述，如需折线图，请具体询问：如“天气怎么样，是否会降水”"]
             for day in result['forecast']:
                 lines.append(
                     f"日期：{day['date']},天气情况：{day['description']},气温：{day['temperature']}°C,"
                     f"风速:{day['speed']}, 湿度:{day['humidity']},降水率:{day['pop']}"
                 )
-            return "\n".join(lines)
+
+            return lines, index
 
     return process_answer(answer)  # 关键补充：外层返回结果
 
 
-print(get_line_chart_data("hot", "perth", 5))
+

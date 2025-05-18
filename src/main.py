@@ -1,9 +1,10 @@
-from get_weather_data import  get_weather_forecast
+from line_chart_data import get_line_chart_data
 
 
 def main():
-    print(get_weather_forecast('Perth',5))
+    print(get_line_chart_data("rain", "perth", 5))
 
-#better way to run the main code
+
+# better way to run the main code
 if __name__ == "__main__":
-     main()
+    main()
