@@ -2,22 +2,22 @@ import re
 
 # 定义处理函数
 def res_pop():
-    return "降雨率。"
+    return "pop"
 
 def res_describe_weather():
-    return "今天的天气是晴天。"
+    return "describe"
 
 def res_clothing():
-    return "温度。"
+    return "temperature"
 
 def res_temperature():
-    return "温度。"
+    return "temperature"
 
 def res_wind():
-    return "风力。"
+    return "wind"
 
 def res_humidity():
-    return "湿度。"
+    return "humidity"
 
 # 问题和响应的映射字典
 response_mapping = {
@@ -67,5 +67,6 @@ def get_weather_response(question):
         if re.search(r"\b" + re.escape(keyword) + r"s?\b", question, re.IGNORECASE):
             return handler()
     return "抱歉，我无法理解您的问题。"
-print(get_weather_response("Do I need to take an umbrella"))
+# 断点测试
+# print(get_weather_response("perth"))
 
