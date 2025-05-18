@@ -1,4 +1,4 @@
-from utils import  get_weather_forecast
+from get_weather_data import  get_weather_forecast
 
 
 def main():

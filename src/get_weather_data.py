@@ -101,10 +101,10 @@ def get_weather_forecast(city,max_day):
                 "pop": mid[5]
 
             })
-        return result
+        return result,data #result 是天气概述，data是具体天气数据，用于获得折线图
     except requests.exceptions.RequestException as e:  # 捕获所有requests相关的异常
         print(f"网络请求失败：请检查网络链接\n{e}")
         return None
     #返回失败的返回值
 
-#数据可视化
+
