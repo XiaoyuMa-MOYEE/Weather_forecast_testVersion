@@ -70,22 +70,22 @@ def get_line_chart_data(questions, city, max_day):  # 传入参数
     def process_answer(answer):
         if answer == "pop":
             index = 1
-            return handle_pop(),index
+            return handle_pop(),index,answer
         elif answer == "describe":
             index = 1
-            return handle_describe(),index
+            return handle_describe(),index,answer
         elif answer == "cloth":
             index = 1
-            return handle_cloth(),index
+            return handle_cloth(),index,answer
         elif answer == "temperature":
             index = 1
-            return handle_temperature(),index
+            return handle_temperature(),index,answer
         elif answer == "wind":
             index = 1
-            return handle_wind(),index
+            return handle_wind(),index,answer
         elif answer == "humidity":
             index = 1
-            return handle_humidity(),index
+            return handle_humidity(),index,answer
         else:
             index = 0
             lines = ["您的问题有些模糊。给您提供全部数据的简单描述，如需折线图，请具体询问：如“天气怎么样，是否会降水”"]
@@ -94,8 +94,8 @@ def get_line_chart_data(questions, city, max_day):  # 传入参数
                     f"日期：{day['date']},天气情况：{day['description']},气温：{day['temperature']}°C,"
                     f"风速:{day['speed']}, 湿度:{day['humidity']},降水率:{day['pop']}"
                 )
-
-            return lines, index
+            answer = "null"
+            return lines, index,answer
 
     return process_answer(answer)  # 关键补充：外层返回结果
 
