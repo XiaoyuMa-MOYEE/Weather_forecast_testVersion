@@ -57,6 +57,11 @@ def get_weather_forecast(city, max_day):
             print("请求失败:", data.get("message", "未知错误"))
             return None
 
+        # 检查返回数据中是否包含有效的城市信息
+        if "city" not in data:
+            print(f"城市 '{city}' 找不到，请检查输入是否正确。")
+            return None
+
         # 按天整理每3小时的天气数据
         forecast_by_day = defaultdict(list)
         for item in data["list"]:
@@ -92,5 +97,5 @@ def get_weather_forecast(city, max_day):
 
         return result, forecast_by_day  # result 是天气概述，data是具体天气数据，用于获得折线图
     except requests.exceptions.RequestException as e:  # 捕获所有requests相关的异常
-        print(f"网络请求失败：请检查网络链接\n{e}")
+        print(f"请求失败：可能是城市名错误或者网络错误，请重新输入\n{e}")
         return None  # 返回失败的返回值

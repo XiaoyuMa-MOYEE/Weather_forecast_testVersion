@@ -3,6 +3,7 @@ from natural_language_responses import get_weather_response
 
 
 def get_line_chart_data(questions, city, max_day):  # 传入参数
+
     result, forecast_by_day = get_weather_forecast(city, max_day)  # 获得参数
     answer = get_weather_response(questions)  # 获得参数
 
