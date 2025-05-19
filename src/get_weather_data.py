@@ -96,6 +96,6 @@ def get_weather_forecast(city, max_day):
                  })
 
         return result, forecast_by_day  # result 是天气概述，data是具体天气数据，用于获得折线图
-    except requests.exceptions.RequestException as e:  # 捕获所有requests相关的异常
-        print(f"请求失败：可能是城市名错误或者网络错误，请重新输入\n{e}")
+    except requests.exceptions.RequestException:  # 捕获所有requests相关的异常
+        print(f"请求失败：可能是城市名错误或者网络错误，请重新输入")
         return None  # 返回失败的返回值
