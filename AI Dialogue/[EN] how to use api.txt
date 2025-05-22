@@ -1,0 +1,225 @@
+How can I obtain data using the API key
+ChatGPT said:
+
+You have obtained the API key of OpenWeatherMap. Now, you just need to add it to the request parameters and you can access the weather data through Python.
+
+The following are the complete steps and code examples to enable you to correctly request and obtain weather forecast data with the key.
+✅ Step 1: Prepare your API Key
+
+Suppose the key you get is:
+
+1234567890abcdef1234567890abcdef
+
+✅ Step 2: Use the key in Python
+
+You need to add this key to the appid parameter of the API request.
+✅ Sample code (get 5-day forecast)
+
+import requests
+from collections import defaultdict
+
+def get_weather_forecast(city, api_key):
+Url = "https://api.openweathermap.org/data/2.5/forecast"
+params = {
+"q": city, # city name
+"appid": api_key, # Your API Key
+"units": "metric", # using degrees Celsius ("imperial" indicates degrees Fahrenheit)
+"lang": "zh_cn" # Chinese weather description
+}
+
+response = requests.get(url, params=params)
+data = response.json()
+
+# Check whether the request is successful
+if response.status_code ! = 200:
+print(" Request Failed :", data.get("message", "Unknown error "))
+return
+
+# Extract the data from noon every day (12:00)
+forecast_by_day = defaultdict(list)
+for item in data["list"]:
+dt_txt = item["dt_txt"]
+date = dt_txt.split(" ")[0]
+temp = item["main"]["temp"]
+description = item["weather"][0]["description"]
+forecast_by_day[date].append((dt_txt, temp, description))
+
+print(f" city: {data['city']['name']}\n")
+for date, entries in list(forecast_by_day.items())[:5]: # Display for a maximum of 5 days
+Take the one at 12 noon or the first one as an alternative
+mid = next((e for e in entries if "12:00" in e[0]), entries[0])
+print(f"{date} : {mid[2]}, {mid[1]}°C")
+
+How to use ✅ :
+
+api_key = "1234567890abcdef1234567890abcdef"
+get_weather_forecast("Beijing", api_key)
+
+✅ Step 3 (recommended) : Store the API Key in the.env file (for better security)
+Create the.env file:
+
+OWM_API_KEY=1234567890abcdef1234567890abcdef
+
+Install python-dotenv:
+
+pip install python-dotenv
+
+Modify the Python code:
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key = os.getenv("OWM_API_KEY")
+
+Then call get_weather_forecast("Beijing", api_key) as usual
+✅ Common Error troubleshooting
+Possible causes of error messages
+401 Unauthorized API key error or not activated
+404 Not Found. The city name is misspelled or does not exist
+429 Too Many Requests. The request frequency exceeds the limit (60 times per minute for free)
+Network request failure, local network failure, spelling mistakes, etc
+
+If you have prepared the API key, you can also tell me which city you want to query. I can help you test the format of the returned data. Do you need me to help you encapsulate a version that returns JSON or table structure?
+You said:
+What is the env file
+ChatGPT said:
+
+Very good question!
+
+The.env file is a small text file used for storing environment variables and is usually used to save sensitive information, such as:
+
+API key (such as OWM_API_KEY=xxx)
+
+Database username and password
+
+Project configuration parameters (such as operation mode, path)
+
+✅ Why.env file?
+Description of Advantages
+Security avoids directly exposing API keys in the code
+It is convenient for centralized management of maintenance configuration, facilitating multi-person collaboration or deployment
+The local, test and production environments can be distinguished, each using different configurations
+It is suitable for version control. The.env file does not need to be uploaded to Git to prevent key leakage
+Example of the 📝.env file
+
+You can create a text file named the.env, and the content is as follows:
+
+OWM_API_KEY=1234567890abcdef1234567890abcdef
+DB_USER=root
+DB_PASS=MySecretPassword
+
+⚠️ File name must be.env, without extension!
+✅ How to use.env file in Python
+
+You need to use the python-dotenv library to read the variables in the.env file.
+🔧 Installation library:
+
+pip install python-dotenv
+
+🔍 Sample code:
+
+import os
+from dotenv import load_dotenv
+
+# Load the variables in the.env file
+load_dotenv()
+
+# Obtain a certain environment variable
+api_key = os.getenv("OWM_API_KEY")
+
+print(f" Your API Key is: {api_key}")
+
+📁 Project structure example:
+
+my_weather_project/
+├── main.py
+├──.env ← stores API keys
+└── requirements.txt
+
+The.env file is not uploaded to GitHub by default. Just add it in the.gitignore:
+
+.env
+
+✅ Summary
+Answer to the question
+What does.env do? Used to store sensitive or configurable parameters, such as API keys
+Is it necessary to use it? Not mandatory, but recommended, especially when it comes to key or multi-environment deployment
+How to read? Read it using the load_dotenv() of python-dotenv
+
+Do you need my help?
+
+Create the.env file and fill in your key?
+
+Write a complete code template for reading.env?
+
+You said:
+How to use the env file in the.ipynb file
+ChatGPT said:
+
+Very good! You can use the.env file completely properly in the.ipynb file (Jupyter Notebook), and the method is the same as in the.py file. It only requires two steps:
+✅ Step 1: Install python-dotenv
+
+If you haven't installed this library yet, run it in the first code unit of Notebook:
+
+! pip install python-dotenv
+
+✅ Step 2: Load the.env file into your Notebook
+
+In your project directory (that is, the directory the.ipynb is located), create a file named the.env and write the following content (such as your API key) :
+
+OWM_API_KEY=1234567890abcdef1234567890abcdef
+
+Then add the following code in the Notebook:
+
+import os
+from dotenv import load_dotenv
+
+# Load the.env file
+load_dotenv()
+
+# Obtain the API key
+api_key = os.getenv("OWM_API_KEY")
+
+print(" Your API Key is: ", api_key)
+
+✅ Overall Notebook example
+
+# Step 1: Install Dependencies (Just the first time)
+! pip install python-dotenv
+
+# Step 2: Load the.env and read the variable
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key = os.getenv("OWM_API_KEY")
+
+# Step 3: Make the request using this key
+import requests
+
+city = "Beijing"
+Url = "https://api.openweathermap.org/data/2.5/forecast"
+params = {
+"q": city,
+"appid": api_key,
+"units": "metric",
+"lang": "zh_cn"
+}
+
+response = requests.get(url, params=params)
+data = response.json()
+
+# Simply output the first result
+if response.status_code == 200:
+print(data["list"][0])
+else:
+print(" Request Failed :", data.get("message", "Unknown error "))
+
+⚠️ Notes
+Problem Description
+The path of the.env file must be in the same directory as the.ipynb file, or pass an absolute path
+Can variable names have Spaces? ❌ No, it must be KEY=VALUE format
+Will the key be exposed? As long as the api_key is not printed out, it will not be exposed
+
+Do you need me to generate a complete.env + Notebook project template for you? Or help you add error handling and caching?

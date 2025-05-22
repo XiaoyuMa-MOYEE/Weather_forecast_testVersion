@@ -1,0 +1,92 @@
+# 输出每日天气（优先取 12:00 的数据）
+        print(f"城市：{data['city']['name']}\n")
+        for date, items in list(forecast_by_day.items())[:max_day]:  # 最多5天
+            # 选取12:00或默认第一条
+            mid = next((x for x in items if "12:00" in x[0]), items[0])
+            print(f"{date}：{mid[2]}，{mid[1]}°C")
+我希望这段函数返回一个JSON，该如何添加
+ChatGPT 说：
+
+你想让这段代码返回一个 JSON 格式的结果而不是直接打印出来，非常好，这样更便于程序化使用、前端传输或写入文件。
+
+下面是你这段逻辑的改写版本，添加了 JSON 构建和返回功能：
+✅ 改写后的版本（返回 JSON 数据）
+
+import requests
+from collections import defaultdict
+
+def get_forecast_json(city, api_key, max_day=5):
+    url = "https://api.openweathermap.org/data/2.5/forecast"
+    params = {
+        "q": city,
+        "appid": api_key,
+        "units": "metric",
+        "lang": "zh_cn"
+    }
+
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if response.status_code != 200:
+        return {
+            "status": "error",
+            "message": data.get("message", "未知错误")
+        }
+
+    forecast_by_day = defaultdict(list)
+
+    # 整理每3小时数据到每天
+    for item in data["list"]:
+        date = item["dt_txt"].split(" ")[0]
+        time = item["dt_txt"]
+        temp = item["main"]["temp"]
+        desc = item["weather"][0]["description"]
+        forecast_by_day[date].append((time, temp, desc))
+
+    # 构建 JSON 输出结构
+    result = {
+        "city": data["city"]["name"],
+        "forecast": []
+    }
+
+    for date, items in list(forecast_by_day.items())[:max_day]:
+        # 尝试获取 12:00 的数据，否则取当天第一条
+        mid = next((x for x in items if "12:00" in x[0]), items[0])
+        result["forecast"].append({
+            "date": date,
+            "time": mid[0],
+            "description": mid[2],
+            "temperature": mid[1]
+        })
+
+    return result
+
+✅ 使用示例
+
+api_key = "你的API_KEY"
+data_json = get_forecast_json("Beijing", api_key)
+print(data_json)
+
+你也可以使用 json.dumps(data_json, ensure_ascii=False, indent=2) 将其格式化输出为中文 JSON。
+✅ 示例返回值结构：
+
+{
+  "city": "Beijing",
+  "forecast": [
+    {
+      "date": "2025-05-12",
+      "time": "2025-05-12 12:00:00",
+      "description": "晴",
+      "temperature": 25.0
+    },
+    {
+      "date": "2025-05-13",
+      "time": "2025-05-13 12:00:00",
+      "description": "多云",
+      "temperature": 21.3
+    }
+    ...
+  ]
+}
+
+是否需要我帮你加上保存为 .json 文件的功能？或者转换为 pandas 表格？

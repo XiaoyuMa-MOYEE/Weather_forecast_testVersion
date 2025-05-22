@@ -1,0 +1,123 @@
+✅ 用户提问 | User Question：
+
+    对于用户输入的检测有哪些方式，比如大小写校验，是否数字校验，是否字符串校验，以及如何避免字符串导致的SQL注入？
+    What are the common ways to validate user input, such as case checks, numeric checks, string checks, and how to prevent SQL injection caused by strings?
+
+✅ ChatGPT 回答 | ChatGPT Answer：
+✅ 一、常见输入检测方式
+✅ 1. 是否为数字 | Is it a number?
+
+user_input = "123"
+if user_input.isdigit():
+    print("是纯数字 / Is a digit")
+else:
+    print("不是数字 / Not a digit")
+
+支持浮点数的检测 | Support float:
+
+try:
+    float(user_input)
+    print("是合法数字 / Valid number")
+except ValueError:
+    print("不是数字 / Not a number")
+
+✅ 2. 是否为字母 / 字符串 | Alphabet or Alphanumeric
+
+if user_input.isalpha():
+    print("全是字母 / All letters")
+
+if user_input.isalnum():
+    print("是字母或数字组合 / Alphanumeric")
+
+✅ 3. 大小写校验 | Case Checking
+
+if user_input.islower():
+    print("全部小写 / All lowercase")
+elif user_input.isupper():
+    print("全部大写 / All uppercase")
+
+✅ 4. 空输入检测 | Empty Input Check
+
+if not user_input.strip():
+    print("输入为空 / Input is empty")
+
+✅ 5. 正则格式匹配（如邮箱）| Regex Format Matching (e.g., Email)
+
+import re
+email = "user@example.com"
+if re.match(r"[^@]+@[^@]+\.[^@]+", email):
+    print("是合法邮箱 / Valid email")
+
+✅ 二、防止 SQL 注入 | Preventing SQL Injection
+
+❌ 错误写法（会被注入）| Bad Example:
+
+query = f"SELECT * FROM users WHERE name = '{user_input}'"
+cursor.execute(query)
+
+✅ 正确写法（参数绑定）| Good Example: Parameterized Query
+
+SQLite 示例 | Example (sqlite3):
+
+cursor.execute("SELECT * FROM users WHERE name = ?", (user_input,))
+
+PostgreSQL 示例 | Example (psycopg2):
+
+cursor.execute("SELECT * FROM users WHERE name = %s", (user_input,))
+
+✅ 三、增强用户输入验证的建议 | Best Practices
+检查项 / Check	方法 / Method
+空值 / Empty check	not input.strip()
+字数限制 / Length	len(input) < 50
+白名单 / Whitelist	input in ['Beijing', 'Shanghai']
+正则限制 / Regex	re.match(...)
+数字范围 / Range	int(x) in range(1, 6)
+类型转换 / Type check	try: int(x) or float(x)
+SQL注入防护 / SQL injection	参数绑定 queries
+✅ 四、交互系统中使用校验（结合 ipywidgets）
+
+In UI systems using ipywidgets:
+
+def on_button_click(b):
+    city_name = city.value.strip()
+    if not city_name.isalpha():
+        with output:
+            clear_output()
+            print("请输入合法的城市名称（仅字母） / Please enter a valid city name (letters only)")
+        return
+
+✅ 五、自定义封装验证函数 | Custom Validation Function
+
+import re
+
+def validate_inputs(city, day, question):
+    def is_valid_city(city):
+        return city.isalpha()
+
+    def is_valid_day(day):
+        return day.isdigit()
+
+    def is_safe_question(question):
+        if not question or not question.strip():
+            return False
+        blacklist = ['--', ';', '/*', '*/', '@@', '@', 'char', 'nchar',
+                     'varchar', 'nvarchar', 'alter', 'begin', 'cast',
+                     'create', 'cursor', 'declare', 'delete', 'drop',
+                     'exec', 'execute', 'fetch', 'insert', 'kill', 
+                     'select', 'sys', 'sysobjects', 'syscolumns', 
+                     'table', 'update']
+        lower_q = question.lower()
+        return all(keyword not in lower_q for keyword in blacklist)
+
+    if is_valid_city(city) and is_valid_day(day) and is_safe_question(question):
+        return city, day, question, 1
+    else:
+        return city, day, question, 0
+
+✅ 示例调用 | Sample Use:
+
+city, day, question, index = validate_inputs("Perth", "3", "Will it rain?")
+if index == 1:
+    print("✅ 输入验证通过 / Input is valid")
+else:
+    print("❌ 输入存在问题 / Invalid input detected")

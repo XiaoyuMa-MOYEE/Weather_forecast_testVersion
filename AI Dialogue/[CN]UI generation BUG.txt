@@ -1,0 +1,465 @@
+import ipywidgets as widgets
+
+from IPython.display import display
+
+
+def run_forecast_ui():
+    html_text = widgets.HTML(
+        value="<h2 style='color:#66ccff'>欢迎使用交互系统</h2><p>一个简单的预测系统。</p>"
+    )
+
+    city = widgets.Text(
+        value = "perth",
+        placeholder='请输入城市',
+        description='城市名称：',
+        disabled=False
+    )
+
+    max_day = widgets.Dropdown(
+        options=[1, 2, 3, 4, 5],
+        value=5,
+        description='希望预测的天数(1-5天)：',
+        layout=widgets.Layout(width='300px'),
+        style={'description_width': '150px'}
+    )
+
+    question_input = widgets.Text(
+        value = "rain",
+        placeholder='请输入问题',
+        description='您想问些什么天气问题：',
+        disabled=False,
+        layout=widgets.Layout(width='300px'),
+        style={'description_width': '150px'}
+    )
+
+    predict_button = widgets.Button(
+        description='预测',
+        button_style='',
+        tooltip='点我一下',
+        icon='check'
+    )
+
+    exit_button = widgets.Button(
+        description='退出',
+        button_style='danger',
+        tooltip='结束程序',
+        icon='sign-out-alt'
+    )
+
+    output = widgets.Output()
+
+
+    # 按钮点击响应
+    def on_predict_click(b):
+        output.clear_output()
+
+        city_name = city.value.strip()
+        question = question_input.value.strip()
+        day = int(max_day.value)
+
+        city.value = ''
+        question_input.value = ''
+        max_day.value = 5
+
+        _, _, _, index = validate_inputs(city_name, day, question)
+
+        with output:
+            if index == 0:
+                print("❌ 输入有误，请重新输入：")
+                print(f"城市：{city_name}")
+                print(f"天数：{day}")
+                print(f"问题：{question}")
+            else:
+                print("✅ 输入通过，图表将在下方生成")
+
+                try:
+                    line_chart(question, city_name, day)
+                except Exception as e:
+                    print("🚫 line_chart 执行失败：", e)
+
+
+
+    def on_exit_click(b):
+        output.clear_output()
+        ui_box.close()
+        with output:
+            print("已退出系统，感谢使用！")
+
+    predict_button.on_click(on_predict_click)
+    exit_button.on_click(on_exit_click)
+
+    # 包裹全部控件，便于退出时统一 close()
+    ui_box = widgets.VBox([html_text, city, max_day, question_input,
+                           widgets.HBox([predict_button, exit_button]),
+                           output])
+    display(ui_box)
+
+这是我的用户交互界面代码，我在执行主函数的时候：
+def main():
+    line_chart("rain", "perth", 5)
+    run_forecast_ui()
+
+
+# better way to run the main code
+if __name__ == "__main__":
+    main()
+可以正常执行：先生成一个图表，然后通过键入数据后在ui下方生成新的图表，并且通过更换键入的数据可以更新下方的图表。
+但是问题是，当我将主函数中的函数line_chart（会用于ui生成图表）注释掉后（也就是说在调用ui传值生成图表前不使用这个函数），UI正常执行，并且对输入值有反应，但是无法显示图表。
+ChatGPT 说：
+
+你所描述的问题——首次运行未预生成图表就无法在 UI 下方生成图表，很可能是由于 Plotly 图表在 Jupyter Notebook 环境中 渲染器未初始化 或 UI 的显示环境与图表渲染环境未绑定 所致。
+✅ 问题总结：
+
+    当你在 main() 里先调用 line_chart() 时，Plotly 初始化了渲染环境（如 notebook, notebook_connected 等），从而之后即使在 ipywidgets.Output() 中再绘图也能正常显示。
+
+    但是如果你直接进入 UI，没有先调用 line_chart()，就没有触发 Plotly 的初始化，图表不会渲染出来（虽然逻辑、数据都是对的）。
+
+✅ 解决方法（推荐方式）：
+
+在文件最开始或 run_forecast_ui() 中添加这行代码：
+
+import plotly.io as pio
+pio.renderers.default = 'notebook_connected'  # 或 'notebook'
+
+这会确保 Plotly 图表在 Jupyter 环境下自动绑定到 Notebook 渲染器，无需提前绘制图表来触发初始化。
+✅ 补充建议：确认 line_chart() 中是否使用 fig.show()？
+
+确保你在 line_chart() 中是以如下方式调用的：
+
+def line_chart(question, city, day):
+    ...
+    fig.show()
+
+否则图表即使创建了，也不会显示。
+✅ 示例修复方案整合：
+
+import plotly.io as pio
+pio.renderers.default = 'notebook_connected'  # 确保 Plotly 渲染器初始化
+
+放在你的文件顶部或 run_forecast_ui() 开始处即可。
+✅ 测试流程建议：
+
+    注释掉 main() 中的 line_chart(...)
+
+    添加 pio.renderers.default = 'notebook_connected'
+
+    运行 UI 界面，尝试输入新城市、问题，点击“预测”
+
+    图表应在 Output() 区域中正常生成
+
+如你仍遇到问题，我也可以帮你检查 line_chart() 函数的实现是否正确绑定到了输出区域。你可以贴出它的完整定义供我分析。
+您说：
+from datetime import datetime
+import plotly.graph_objects as go
+from IPython.display import display
+
+
+def line_chart(questions, city, max_day):
+    # print("进入了函数")
+    data, index, answer = get_line_chart_data(questions, city, max_day)  #获取数据
+    if index == 0:  #没有返回数据，仅输出
+        print("\n".join(data))
+    else:
+        print("1")
+        title_of_image = "null"
+        description= "null"
+        if answer == "pop":
+            title_of_image = "Rainfall prediction chart"
+            description = "下雨"
+        elif answer == "describe":
+            title_of_image = "Weather description map"
+            description = "天气"
+        elif answer == "cloth" or "temperature":
+            title_of_image = "Temperature prediction chart"
+            description = "温度"
+        elif answer == "wind":
+            title_of_image = "Wind speed prediction graph"
+            description = "风速"
+        elif answer == "humidity":
+            title_of_image = "Humidity prediction chart"
+            description = "湿度"
+        print(f"您询问的问题与{description}相关正在生成折线图")
+        times = [datetime.strptime(item[0], "%Y-%m-%d %H:%M:%S") for item in data]
+        values = [item[1] for item in data]
+
+        # 使用 Plotly 创建交互式图表
+        fig = go.Figure()
+
+        # 添加数据到图表
+        fig.add_trace(go.Scatter(x=times, y=values, mode='lines+markers', name='Precipitation Probability'))
+
+        # 更新布局
+        fig.update_layout(
+            title=title_of_image,
+            xaxis_title="Date and Time",
+            yaxis_title={
+                "pop": "Precipitation Probability",
+                "describe": "Weather Condition Code",
+                "cloth": "Temperature (°C)",
+                "temperature": "Temperature (°C)",
+                "wind": "Wind Speed (km/h)",
+                "humidity": "Humidity (%)"
+            }.get(answer, "Value"),
+            xaxis=dict(tickformat="%Y-%m-%d %H:%M:%S", tickangle=45),
+            autosize=True
+        )
+
+        # 显示图表
+        display(fig)
+这个是是line chart 代码
+ChatGPT 说：
+
+感谢提供完整代码，你的 line_chart() 函数结构基本正确，但问题确实出在以下几点：
+✅【核心问题定位】图表未显示的两个关键原因：
+① Plotly 图表未调用 .show() 或未绑定 notebook 渲染器
+
+虽然你用了 display(fig)，这在某些 Jupyter Notebook 环境中可以工作，但在 ipywidgets.Output() 容器下，这并不可靠。推荐使用：
+
+fig.show()
+
+替换 display(fig)，这样无论是在 UI 输出区还是在 Notebook 中，Plotly 都能确保正确渲染。
+② 判断语句逻辑错误
+
+你写了：
+
+elif answer == "cloth" or "temperature":
+
+这实际上等价于：
+
+elif (answer == "cloth") or True:
+
+因为 "temperature" 是非空字符串，布尔值永远为 True，导致这个分支永远成立。
+
+应该改为：
+
+elif answer in ["cloth", "temperature"]:
+
+✅【修复建议】修改后的 line_chart() 函数如下：
+
+from datetime import datetime
+import plotly.graph_objects as go
+
+def line_chart(questions, city, max_day):
+    data, index, answer = get_line_chart_data(questions, city, max_day)
+    if index == 0:
+        print("\n".join(data))
+    else:
+        title_of_image = "null"
+        description = "null"
+        if answer == "pop":
+            title_of_image = "Rainfall prediction chart"
+            description = "下雨"
+        elif answer == "describe":
+            title_of_image = "Weather description map"
+            description = "天气"
+        elif answer in ["cloth", "temperature"]:
+            title_of_image = "Temperature prediction chart"
+            description = "温度"
+        elif answer == "wind":
+            title_of_image = "Wind speed prediction graph"
+            description = "风速"
+        elif answer == "humidity":
+            title_of_image = "Humidity prediction chart"
+            description = "湿度"
+
+        print(f"您询问的问题与{description}相关，正在生成折线图")
+
+        times = [datetime.strptime(item[0], "%Y-%m-%d %H:%M:%S") for item in data]
+        values = [item[1] for item in data]
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=times, y=values, mode='lines+markers', name='Value'))
+
+        fig.update_layout(
+            title=title_of_image,
+            xaxis_title="Date and Time",
+            yaxis_title={
+                "pop": "Precipitation Probability",
+                "describe": "Weather Condition Code",
+                "cloth": "Temperature (°C)",
+                "temperature": "Temperature (°C)",
+                "wind": "Wind Speed (km/h)",
+                "humidity": "Humidity (%)"
+            }.get(answer, "Value"),
+            xaxis=dict(tickformat="%Y-%m-%d %H:%M:%S", tickangle=45),
+            autosize=True
+        )
+
+        fig.show()  # 核心修复点
+
+✅【全局建议】在最顶层加上：
+
+import plotly.io as pio
+pio.renderers.default = 'notebook_connected'
+
+可防止在 Jupyter + ipywidgets 混用时图表不显示的问题。
+✅【测试建议】最终执行顺序：
+
+# 无需先执行 line_chart
+run_forecast_ui()
+
+然后直接从 UI 输入内容 → 点击“预测” → 图表应正常显示。
+
+如你仍无法显示图表，请告诉我你使用的是哪种环境（如 Jupyter Notebook / JupyterLab / Google Colab / IntelliJ with IPython plugin），我会提供对应平台的专属修复建议。
+您说：
+更新之后，即使我没有注释掉line函数，也仍不显示图表，但是原先显示图表的位置仍然被占据，只是没有显示
+ChatGPT 说：
+
+你的描述——“图表位置仍被占据，但没有显示图表”——说明图表对象实际上被“创建”了，但没有成功渲染到 Notebook 输出区域。结合你之前提到：
+
+    使用的是 IntelliJ IDEA
+
+    图表初次显示正常，但在某些情况下不再显示
+
+这很可能是由以下原因造成的：
+✅ 根本原因排查清单（带解决方法）
+🔹 1. Plotly 渲染器不兼容 IDEA 的 Jupyter 插件
+
+IntelliJ IDEA 中的 Jupyter Notebook 插件并不完全支持 Plotly 的 notebook_connected 或 notebook 渲染方式。
+✅ 解决方案：
+
+在文件开头添加如下代码，强制使用 iframe 渲染器（最稳定、通用的渲染方式）：
+
+import plotly.io as pio
+pio.renderers.default = 'iframe_connected'
+
+或者：
+
+pio.renderers.default = 'iframe'  # 如果你不希望它联网加载资源
+
+这将让 fig.show() 在任何 IDE 或 HTML 渲染中都能正确显示。
+🔹 2. 你的 UI 输出区域是 ipywidgets.Output()，可能对 Plotly 的 notebook 渲染器兼容性差
+
+ipywidgets.Output() 和 fig.show() 并不总是完美配合，特别在非 Jupyter Lab / 标准 Notebook 环境中。
+✅ 替代方法：使用 display(fig.to_html(...)) 渲染 HTML
+
+修改 line_chart() 的显示部分如下：
+
+from IPython.display import HTML
+
+...
+
+html = fig.to_html(include_plotlyjs='cdn', full_html=False)
+display(HTML(html))
+
+这将手动把图表转成 HTML 并渲染——即使是 Output 区域也可以工作良好。
+🔹 3. 图表数据生成失败但未报错
+
+你说“位置被占据但图没显示”，也可能数据为空但未触发异常。
+✅ 检查 data 是否为空：
+
+在 line_chart() 里加入：
+
+if not data:
+    print("⚠️ 没有获取到数据，图表无法生成")
+    return
+
+✅ 推荐最终写法（稳健）
+
+在 line_chart() 的显示部分改为如下代码，适配所有环境：
+
+from IPython.display import HTML
+
+...
+
+if not data:
+    print("⚠️ 没有获取到数据，图表无法生成")
+    return
+
+...
+
+# 使用更稳定的 HTML 渲染方式
+html = fig.to_html(include_plotlyjs='cdn', full_html=False)
+display(HTML(html))
+
+同时在顶部加上：
+
+import plotly.io as pio
+pio.renderers.default = 'iframe_connected'
+
+🔍 补充建议：你可以试试看图表是否能在 标准 Jupyter Notebook（jupyter notebook 启动的网页）中显示。如果可以说明是 IntelliJ 的兼容问题。
+
+如果你愿意，我也可以帮你把 line_chart() 中显示部分提取成一个独立方法，例如：
+
+def render_chart(fig):
+    from IPython.display import HTML
+    html = fig.to_html(include_plotlyjs='cdn', full_html=False)
+    display(HTML(html))
+
+然后你在 line_chart() 里调用 render_chart(fig) 即可。
+
+需要我帮你整理成完整可运行的修复版代码吗？
+您说：
+更新之后问题依旧，不注释掉可以显示，注释后无显示
+ChatGPT 说：
+
+非常感谢你的耐心反馈。你描述的现象非常关键：
+
+    ✅ 不注释 line_chart() 在主函数中可以显示图表
+    ❌ 注释后图表完全不显示，但位置仍被占据
+
+这说明图表能否显示并不是数据或逻辑的问题，而是在首次运行时未正确初始化 Plotly 的渲染环境，尤其是在 ipywidgets 的 Output() 容器中进行动态绘图 时。
+✅ 彻底修复方案：手动激活渲染器 + 强制嵌入 HTML 图表
+
+我们来组合出一个彻底修复方案，适配任意 UI 交互环境（包括 IntelliJ）：
+✅ 第一步：强制 Plotly 使用 HTML 渲染方式
+
+替换 line_chart() 最后的 fig.show() 部分：
+
+from IPython.display import HTML
+
+def render_chart(fig):
+    html = fig.to_html(include_plotlyjs='cdn', full_html=False)
+    display(HTML(html))
+
+然后在 line_chart() 中用：
+
+render_chart(fig)
+
+✅ 第二步：UI 初始化时强制引导渲染器激活一次（关键）
+
+你必须在 UI 初始化前，调用一次空图初始化，让 Plotly 渲染器完成注册。
+✔ 添加这个函数（只初始化一次空图）：
+
+def initialize_plotly_renderer():
+    import plotly.graph_objects as go
+    from IPython.display import HTML
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=[0], y=[0]))
+    html = fig.to_html(include_plotlyjs='cdn', full_html=False)
+    display(HTML(html))
+
+然后在主函数中这样写：
+
+def main():
+    initialize_plotly_renderer()  # 🟩 强制预加载图表渲染器
+    run_forecast_ui()
+
+✅ 第三步：确保顶部加上渲染器设置（可选但推荐）
+
+import plotly.io as pio
+pio.renderers.default = 'iframe_connected'
+
+🔁 修复后的关键流程
+
+1. main():
+    - initialize_plotly_renderer() ✅【解决首次渲染器未初始化】
+    - run_forecast_ui()
+
+2. 用户点击“预测”：
+    - 在 output 区域动态绘图
+    - 使用 HTML 渲染图表，适配所有环境
+
+3. 无需预调用 line_chart()，图表始终显示
+
+✅ 如果你希望我帮你打包成完整代码结构，也可以发出你的 get_line_chart_data() 的样子，我可帮你接好所有接口。
+
+如仍失败，请告诉我你当前运行的完整环境，包括：
+
+    IntelliJ IDEA + Jupyter 插件？还是 Jupyter Notebook？
+
+    是否使用 Anaconda 或虚拟环境？
+
+    是否使用 .ipynb 文件还是 .py 文件执行？
+
+我会针对你的平台直接优化。

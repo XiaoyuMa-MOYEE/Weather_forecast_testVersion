@@ -1,0 +1,420 @@
+# 旧的用于获取天气的api代码
+'''
+## 使用API获得数据的旧代码
+# def test_of_data():
+#     city = "Perth"
+#     # 发送 GET 请求
+#     # 标准化格式
+#     # response = requests.get(f'https://wttr.in/{city}?3&format=%l:+%c+%t+%C+%w')
+#     # %l: 地址
+#     # %c: 当前天气图标
+#     # %t: 温度
+#     # %C：天气描述
+#     # %w: 风速
+#     # 输出响应内容
+#
+#     # 访问默认格式
+#     response = requests.get(f'https://wttr.in/{city}?format=j1')
+#     data = response.json()
+#     #输出完整data用于观察数据格式
+#     print(data)
+#     # 访问未来三天的数据
+#     for day in data['weather']:
+#         date = day['date']
+#         maxtemp = day['maxtempC']
+#         mintemp = day['mintempC']
+#         description = day['hourly'][4]['weatherDesc'][0]['value']  # 中午的天气
+#         print(f"{date}: {description}, {mintemp}°C ~ {maxtemp}°C")
+#         print(len(data['weather']))
+'''
+from collections import defaultdict
+
+import requests
+
+
+# 获取天气数据（返回JSON数据）
+def get_weather_forecast(city, max_day):
+    """
+    每个函数需要包含一个文档描述，其中包含函数说明，输入和输出示例
+    :param city:城市名称
+    :param max_day:1-5的正整数
+    """
+    # api's key
+    api_key = "56d26083c4e5d4828784871da1b7b0b3"
+    # api
+    url = "https://api.openweathermap.org/data/2.5/forecast"
+    params = {"q": city, "appid": api_key, "units": "metric", "lang": "zh_cn"  # todo:修改语言
+              }
+    try:
+        response = requests.get(url, params=params)
+        # 若无响应则抛出异常
+        response.raise_for_status()
+        data = response.json()
+        # 尝试输出
+        # print(data)
+
+        if response.status_code != 200:
+            print("请求失败:", data.get("message", "未知错误"))
+            return None
+
+        # 按天整理每3小时的天气数据
+        forecast_by_day = defaultdict(list)
+        for item in data["list"]:
+            # 日期
+            date = item["dt_txt"].split(" ")[0]
+            # 温度
+            temp = item["main"]["temp"]
+            # 描述
+            desc = item["weather"][0]["description"]
+            # 风速
+            speed = item["wind"]["speed"]
+            # 湿度
+            humidity = item["main"]["humidity"]
+            # 降水率
+            pop = item.get("pop", 0)
+            time = item["dt_txt"]
+            forecast_by_day[date].append((time, temp, desc, speed, humidity, pop))
+
+        # 输出每日天气（优先取 12:00 的数据）
+        # print(f"城市：{data['city']['name']}")
+        result = {"city": data["city"]["name"], "forecast": []}
+        for date, items in list(forecast_by_day.items())[:max_day]:  # 最多5天
+            # 选取12:00或默认第一条
+            mid = next((x for x in items if "12:00" in x[0]), items[0])
+            # 测试语句
+            # print(f"日期：{date},天气情况：{mid[2]},气温：{mid[1]}°C,风速:{mid[3]}, 湿度:{mid[4]},降水率:{mid[5]}")
+
+            result["forecast"].append(
+                {"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+                 "humidity": mid[4], "pop": mid[5]
+
+                 })
+
+        return result, forecast_by_day  # result 是天气概述，data是具体天气数据，用于获得折线图
+    except requests.exceptions.RequestException as e:  # 捕获所有requests相关的异常
+        print(f"网络请求失败：请检查网络链接\n{e}")
+        return None  # 返回失败的返回值
+这里是我的代码，
+import ipywidgets as widgets
+
+from IPython.display import display
+
+
+def run_forecast_ui():
+    html_text = widgets.HTML(
+        value="<h2 style='color:#66ccff'>欢迎使用交互系统</h2><p>一个简单的预测系统。</p>"
+    )
+
+    city = widgets.Text(
+        value = "perth",
+        placeholder='请输入城市',
+        description='城市名称：',
+        disabled=False
+    )
+
+    max_day = widgets.Dropdown(
+        options=[1, 2, 3, 4, 5],
+        value=5,
+        description='希望预测的天数(1-5天)：',
+        layout=widgets.Layout(width='300px'),
+        style={'description_width': '150px'}
+    )
+
+    question_input = widgets.Text(
+        value = "rain",
+        placeholder='请输入问题',
+        description='您想问些什么天气问题：',
+        disabled=False,
+        layout=widgets.Layout(width='300px'),
+        style={'description_width': '150px'}
+    )
+
+    predict_button = widgets.Button(
+        description='预测',
+        button_style='',
+        tooltip='点我一下',
+        icon='check'
+    )
+
+    exit_button = widgets.Button(
+        description='退出',
+        button_style='danger',
+        tooltip='结束程序',
+        icon='sign-out-alt'
+    )
+
+    output = widgets.Output()
+
+
+    # 按钮点击响应
+    def on_predict_click(b):
+        output.clear_output()
+
+        city_name = city.value.strip()
+        question = question_input.value.strip()
+        day = int(max_day.value)
+
+        city.value = ''
+        question_input.value = ''
+        max_day.value = 5
+
+        _, _, _, index = validate_inputs(city_name, day, question)
+
+        with output:
+            if index == 0:
+                print("❌ 输入有误，请重新输入：")
+                print(f"城市：{city_name}")
+                print(f"天数：{day}")
+                print(f"问题：{question}")
+            else:
+                print("✅ 输入通过，图表将在下方生成")
+
+                try:
+                    line_chart(question, city_name, day)
+                except Exception as e:
+                    print("🚫 line_chart 执行失败：", e)
+
+
+
+    def on_exit_click(b):
+        output.clear_output()
+        ui_box.close()
+        with output:
+            print("已退出系统，感谢使用！")
+
+    predict_button.on_click(on_predict_click)
+    exit_button.on_click(on_exit_click)
+
+    # 包裹全部控件，便于退出时统一 close()
+    ui_box = widgets.VBox([html_text, city, max_day, question_input,
+                           widgets.HBox([predict_button, exit_button]),
+                           output])
+    display(ui_box)
+
+我想在用户输入的城市名称找不到时，不对用户返回错误代码，而是提示用户输入错误
+ChatGPT 说：
+
+要在用户输入的城市名称找不到时提示用户输入错误，你可以在调用天气 API 前进行一个简单的验证，检查返回的响应中是否包含有效的城市数据。如果没有有效数据，则提示用户输入错误。
+
+你可以在get_weather_forecast函数中进行修改，以便在无法找到城市时给出更友好的错误提示。
+
+修改后的代码如下：
+
+# 获取天气数据（返回JSON数据）
+def get_weather_forecast(city, max_day):
+    """
+    每个函数需要包含一个文档描述，其中包含函数说明，输入和输出示例
+    :param city: 城市名称
+    :param max_day: 1-5的正整数
+    """
+    # api's key
+    api_key = "56d26083c4e5d4828784871da1b7b0b3"
+    # api
+    url = "https://api.openweathermap.org/data/2.5/forecast"
+    params = {"q": city, "appid": api_key, "units": "metric", "lang": "zh_cn"  # todo:修改语言
+              }
+    try:
+        response = requests.get(url, params=params)
+        # 若无响应则抛出异常
+        response.raise_for_status()
+        data = response.json()
+
+        if response.status_code != 200:
+            print("请求失败:", data.get("message", "未知错误"))
+            return None
+
+        # 检查返回数据中是否包含有效的城市信息
+        if "city" not in data:
+            print(f"城市 '{city}' 找不到，请检查输入是否正确。")
+            return None
+
+        # 按天整理每3小时的天气数据
+        forecast_by_day = defaultdict(list)
+        for item in data["list"]:
+            # 日期
+            date = item["dt_txt"].split(" ")[0]
+            # 温度
+            temp = item["main"]["temp"]
+            # 描述
+            desc = item["weather"][0]["description"]
+            # 风速
+            speed = item["wind"]["speed"]
+            # 湿度
+            humidity = item["main"]["humidity"]
+            # 降水率
+            pop = item.get("pop", 0)
+            time = item["dt_txt"]
+            forecast_by_day[date].append((time, temp, desc, speed, humidity, pop))
+
+        # 输出每日天气（优先取 12:00 的数据）
+        result = {"city": data["city"]["name"], "forecast": []}
+        for date, items in list(forecast_by_day.items())[:max_day]:  # 最多5天
+            # 选取12:00或默认第一条
+            mid = next((x for x in items if "12:00" in x[0]), items[0])
+
+            result["forecast"].append(
+                {"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+                 "humidity": mid[4], "pop": mid[5]})
+
+        return result, forecast_by_day  # result 是天气概述，data是具体天气数据，用于获得折线图
+    except requests.exceptions.RequestException as e:  # 捕获所有requests相关的异常
+        print(f"网络请求失败：请检查网络链接\n{e}")
+        return None  # 返回失败的返回值
+
+在这段代码中，我们添加了如下验证：
+
+    检查城市是否有效：通过检查返回数据中是否包含 "city" 字段，如果没有该字段，则说明输入的城市无效。
+
+    友好的错误提示：如果城市无效，返回一个提示信息，如 城市 'xxx' 找不到，请检查输入是否正确，而不是直接返回错误代码。
+
+这样，用户在输入无效城市名称时，会收到一个明确的提示，而不是看到错误代码。
+您说：
+我在别处调用了这个函数， result, forecast_by_day = get_weather_forecast(city, max_day) 这样修改的报错怎么解决
+ChatGPT 说：
+
+如果你在调用 get_weather_forecast 函数时出现了错误，可能是因为当城市无效时，函数会返回 None，这会导致解包失败。为了避免这个问题，我们可以在调用函数时检查返回值是否是 None，并根据情况处理。
+修改方法：
+
+在调用 get_weather_forecast 函数时，先检查返回值是否为 None，然后再解包。具体来说，在调用后处理时可以加入一个条件判断，只有当返回值不为 None 时才进行解包。
+
+修改后的调用部分代码：
+
+result, forecast_by_day = None, None  # 初始化为 None，避免解包失败
+
+# 调用函数
+response = get_weather_forecast(city, max_day)
+
+# 检查返回的 response 是否为 None
+if response:
+    result, forecast_by_day = response
+else:
+    print("无法获取天气数据，请检查输入的城市名或网络连接。")
+    # 可以根据需要在这里添加更多处理，比如提示用户重新输入城市等
+
+解释：
+
+    在调用 get_weather_forecast(city, max_day) 后，检查其返回值是否为 None。
+
+    如果返回的是有效的数据（即 None），则解包 result 和 forecast_by_day。
+
+    如果返回 None，则输出错误提示信息并避免解包错误。
+
+通过这种方式，可以防止在城市无效时尝试解包 None 导致的错误。
+您说：
+我的调用比较复杂，有更简单的处理方式么
+ChatGPT 说：
+
+如果你的调用逻辑比较复杂，可以通过使用 Python 的 try-except 语句来处理可能出现的错误，这样可以避免手动检查每次调用的返回值。
+更简化的处理方法：
+
+你可以直接在函数调用时进行错误处理，而不必在每次调用时检查返回值。通过捕获返回 None 的情况，你可以简化代码结构。
+
+修改后的示例：
+
+try:
+    result, forecast_by_day = get_weather_forecast(city, max_day)
+    if result is None:  # 进一步检查返回值
+        raise ValueError("无法获取天气数据，城市名称可能无效。")
+except ValueError as e:
+    print(f"错误: {e}")
+except Exception as e:
+    print(f"发生了其他错误: {e}")
+
+解释：
+
+    try-except 块：尝试调用 get_weather_forecast 函数，并将返回值解包。
+
+    ValueError 异常：如果返回值是 None，通过 raise ValueError 显式抛出一个异常，表示无法获取天气数据。
+
+    通用异常捕获：except Exception as e 捕获其他类型的异常，防止程序崩溃。
+
+这样，你可以将错误处理集中在一个地方，而无需在每次调用时进行额外检查。
+您说：
+
+            result["forecast"].append(
+                {"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+                 "humidity": mid[4], "pop": mid[5]
+
+                 })
+
+        return result, forecast_by_day  # result 是天气概述，data是具体天气数据，用于获得折线图
+    except requests.exceptions.RequestException as e:  # 捕获所有requests相关的异常
+        print(f"请求失败：可能是城市名错误或者网络错误，请重新输入\n{e}")
+        return None  # 返回失败的返回值
+这是我的报错代码，我希望只显示请求失败：可能是城市名错误或者网络错误，请重新输入，而不显示系统的错误信息，如何实现
+ChatGPT 说：
+
+你可以通过在 except 语句中使用 logging 或者简单的 print 来控制错误输出，避免打印系统的详细错误信息。通过捕获 requests.exceptions.RequestException，你可以仅显示自定义的错误信息，而不显示系统的错误堆栈。
+修改后的代码：
+
+import requests
+
+# 获取天气数据（返回JSON数据）
+def get_weather_forecast(city, max_day):
+    """
+    每个函数需要包含一个文档描述，其中包含函数说明，输入和输出示例
+    :param city: 城市名称
+    :param max_day: 1-5的正整数
+    """
+    # api's key
+    api_key = "56d26083c4e5d4828784871da1b7b0b3"
+    # api
+    url = "https://api.openweathermap.org/data/2.5/forecast"
+    params = {"q": city, "appid": api_key, "units": "metric", "lang": "zh_cn"  # todo:修改语言
+              }
+    try:
+        response = requests.get(url, params=params)
+        # 若无响应则抛出异常
+        response.raise_for_status()
+        data = response.json()
+
+        if response.status_code != 200:
+            print("请求失败:", data.get("message", "未知错误"))
+            return None
+
+        # 检查返回数据中是否包含有效的城市信息
+        if "city" not in data:
+            print(f"城市 '{city}' 找不到，请检查输入是否正确。")
+            return None
+
+        # 按天整理每3小时的天气数据
+        forecast_by_day = defaultdict(list)
+        for item in data["list"]:
+            # 日期
+            date = item["dt_txt"].split(" ")[0]
+            # 温度
+            temp = item["main"]["temp"]
+            # 描述
+            desc = item["weather"][0]["description"]
+            # 风速
+            speed = item["wind"]["speed"]
+            # 湿度
+            humidity = item["main"]["humidity"]
+            # 降水率
+            pop = item.get("pop", 0)
+            time = item["dt_txt"]
+            forecast_by_day[date].append((time, temp, desc, speed, humidity, pop))
+
+        # 输出每日天气（优先取 12:00 的数据）
+        result = {"city": data["city"]["name"], "forecast": []}
+        for date, items in list(forecast_by_day.items())[:max_day]:  # 最多5天
+            # 选取12:00或默认第一条
+            mid = next((x for x in items if "12:00" in x[0]), items[0])
+
+            result["forecast"].append(
+                {"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+                 "humidity": mid[4], "pop": mid[5]})
+
+        return result, forecast_by_day  # result 是天气概述，data是具体天气数据，用于获得折线图
+    except requests.exceptions.RequestException:  # 捕获所有requests相关的异常
+        # 只显示自定义的错误信息，不显示系统的详细错误堆栈
+        print("请求失败：可能是城市名错误或者网络错误，请重新输入")
+        return None  # 返回失败的返回值
+
+关键修改：
+
+    异常捕获：在 except 块中，我们只捕获 requests.exceptions.RequestException 异常，而不打印详细的错误信息。
+
+    自定义错误提示：使用 print("请求失败：可能是城市名错误或者网络错误，请重新输入") 来显示简单的错误消息，而不显示系统的堆栈信息。
+
+这样，当出现请求异常时，系统只会输出你自定义的错误信息，不会泄漏具体的异常堆栈信息。

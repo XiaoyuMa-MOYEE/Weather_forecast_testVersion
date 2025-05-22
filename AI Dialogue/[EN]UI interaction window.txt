@@ -1,0 +1,453 @@
+In Python, (in an ipynb file), how to create interactive Windows, such as display buttons, input boxes, text or prompts, etc.
+ChatGPT said:
+
+In the.ipynb (Jupyter Notebook) file of Python, interactive Windows such as buttons, input boxes, text prompts, etc. can be created through the ipywidgets library.
+
+The following is a basic example of a commonly used collection of interaction components:
+✅ 1. Install ipywidgets (if not yet installed)
+
+pip install ipywidgets
+
+Enable widget support in Jupyter (usually done automatically) :
+
+jupyter nbextension enable --py widgetsnbextension
+
+✅ 2. Examples of basic usage
+
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+
+# Text Input Box
+text_input = widgets.Text(
+value=' Default value '
+placeholder=' Input text '
+description=' Text: '
+disabled=False
+)
+
+# Button
+button = widgets.Button(
+description=' Click on Me '
+disabled=False,
+button_style='',  # 'success', 'info', 'warning', 'danger' or ''
+tooltip=' Click on me '
+icon='check' # FontAwesome icon
+)
+
+# Output Area
+output = widgets.Output()
+
+# Response function after clicking the button
+def on_button_click(b):
+with output:
+clear_output()
+print(f" You entered: {text_input.value}")
+
+# Binding Event
+button.on_click(on_button_click)
+
+# Display Control
+display(text_input, button, output)
+
+✅ 3. Examples of other commonly used components
+
+# Drop-down menu
+dropdown = widgets.Dropdown(
+options=[' Option 1', 'Option 2',' Option 3']
+value=' Option 1'
+description=' Select: '
+)
+
+# Multiple selection boxes
+checkbox = widgets.Checkbox(
+value=False,
+description=' Whether to enable '
+)
+
+# Sliding Bar
+slider = widgets.IntSlider(
+value=5,
+min=0,
+max=10,
+step=1,
+description=' Sliding value: '
+)
+
+# Display multiple components
+display(dropdown, checkbox, slider)
+
+✅ 4. Optional advanced combination: interactive
+
+Quick combination of functions and controls:
+
+from ipywidgets import interact
+
+def show_data(x, y):
+print(f"x: {x}, y: {y}")
+
+interact(show_data, x=widgets.IntSlider(0, 0, 100), y=widgets.Dropdown(options=[1, 2, 3]))
+
+If you tell me exactly which kind of interaction you want to achieve (such as weather inquiry, data input, button operation, etc.), I can provide more specific templates or logics.
+You said:
+Is there a text display box component, that is, one without user interaction and only displaying text
+ChatGPT said:
+
+Yes, there are indeed components dedicated to displaying static text in ipywidgets. You can achieve text display (without user interaction) in the following several ways:
+✅ Option 1: widgets.Label
+
+import ipywidgets as widgets
+from IPython.display import display
+
+label = widgets.Label(value=" This is a static text label." )
+display(label)
+
+✅ Purpose: To display a concise line of text
+
+❌ does not support line breaks or rich text formatting
+
+✅ Method 2: widgets.HTML (supports HTML format, suitable for rich text)
+
+html_text = widgets.HTML(
+value="<h3 style='color:blue'> Welcome to use the interactive system </h3><p> Here is the detailed explanatory text. </p>"
+)
+display(html_text)
+
+✅ supports multiple lines, colors, fonts, paragraphs, HTML structures
+
+✅ Non-interactive, show content only
+
+✅ Method 3: Use print with Output (for dynamic content)
+
+from IPython.display import clear_output
+output = widgets.Output()
+
+with output:
+print(" This is the content Output through output \ nSupports line breaks \ ncan be updated dynamically ")
+
+display(output)
+
+✅ supports multiple lines and line breaks
+
+✅ You can update the content with code (for example, clear and re-output).
+
+✅ can be linked with controls such as buttons to display dynamic content
+
+✅ Summary and Comparison
+Usage: Line-breaking HTML supports updatable recommended uses
+Label ❌ ❌ ✅ shows one line of status or result
+HTML ✅ ✅ ✅ displays rich text, multi-line descriptions
+Output ✅ ❌ (plain text) ✅ for displaying dynamic logs, analysis results, etc
+
+If you tell me your usage scenarios (such as describing a piece of explanatory text, result display area, prompt information, etc.), I can recommend the most suitable solution.
+You said:
+The character display length here is insufficient. Can the limit be changed or the layout be set
+ChatGPT said:
+
+In your Dropdown menu control, the description text (description=' Predicted days (1-5 days) : ') has been truncated. This is because ipywidgets limits the display width of the control by default, especially the description part.
+
+You can customize the width, alignment, etc. by setting the layout parameter.
+✅ Solution: Increase the display width of the descriptive text
+
+Modify as follows:
+
+import ipywidgets as widgets
+from IPython.display import display
+
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='300px') # Set the overall width
+)
+display(dropdown)
+
+✅ Further: Set the label (description) width + control width
+
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='400px'), # Overall control width
+style={'description_width': '150px'} # The description width on the left
+)
+display(dropdown)
+
+This can enable:
+
+The description text (label) has a wider width to prevent it from being truncated by ellipses.
+
+The drop-down box itself also maintains an appropriate width.
+
+✅ Additional tip: Use HBox or VBox if you want to customize alignment or display multiple controls in the same row
+
+text =widgets. Text(description=" You entered: ", layout=widgets.Layout(width='300px'))
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='400px'),
+style={'description_width': '150px'}
+)
+
+widgets.VBox([text, dropdown]) # Arrange controls vertically
+
+If you have multiple component combinations or specific layout requirements, I can also help you plan the layout together.
+You said:
+Can centering be set
+ChatGPT said:
+
+Sure. In ipywidgets, you can use the Layout parameter in conjunction with containers such as HBox and VBox to achieve the overall centering display of controls. The following are several common "centered display" methods.
+✅ Method 1: Center a single control horizontally
+
+import ipywidgets as widgets
+from IPython.display import display
+
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='400px'),
+style={'description_width': '150px'}
+)
+
+# Use Box and set justify_content to center to achieve horizontal centering
+centered = widgets.HBox([dropdown], layout=widgets.Layout(justify_content='center'))
+display(centered)
+
+✅ Method 2: Center multiple controls vertically + horizontally
+
+text =widgets. Text(description=" You entered: ", layout=widgets.Layout(width='300px'))
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='400px'),
+style={'description_width': '150px'}
+)
+
+In Python, (in an ipynb file), how to create interactive Windows, such as display buttons, input boxes, text or prompts, etc.
+ChatGPT said:
+
+In the.ipynb (Jupyter Notebook) file of Python, interactive Windows such as buttons, input boxes, text prompts, etc. can be created through the ipywidgets library.
+
+The following is a basic example of a commonly used collection of interaction components:
+✅ 1. Install ipywidgets (if not yet installed)
+
+pip install ipywidgets
+
+Enable widget support in Jupyter (usually done automatically) :
+
+jupyter nbextension enable --py widgetsnbextension
+
+✅ 2. Examples of basic usage
+
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+
+# Text Input Box
+text_input = widgets.Text(
+value=' Default value '
+placeholder=' Input text '
+description=' Text: '
+disabled=False
+)
+
+# Button
+button = widgets.Button(
+description=' Click on Me '
+disabled=False,
+button_style='',  # 'success', 'info', 'warning', 'danger' or ''
+tooltip=' Click on me '
+icon='check' # FontAwesome icon
+)
+
+# Output Area
+output = widgets.Output()
+
+# Response function after clicking the button
+def on_button_click(b):
+with output:
+clear_output()
+print(f" You entered: {text_input.value}")
+
+# Binding Event
+button.on_click(on_button_click)
+
+# Display Control
+display(text_input, button, output)
+
+✅ 3. Examples of other commonly used components
+
+# Drop-down menu
+dropdown = widgets.Dropdown(
+options=[' Option 1', 'Option 2',' Option 3']
+value=' Option 1'
+description=' Select: '
+)
+
+# Multiple selection boxes
+checkbox = widgets.Checkbox(
+value=False,
+description=' Whether to enable '
+)
+
+# Sliding Bar
+slider = widgets.IntSlider(
+value=5,
+min=0,
+max=10,
+step=1,
+description=' Sliding value: '
+)
+
+# Display multiple components
+display(dropdown, checkbox, slider)
+
+✅ 4. Optional advanced combination: interactive
+
+Quick combination of functions and controls:
+
+from ipywidgets import interact
+
+def show_data(x, y):
+print(f"x: {x}, y: {y}")
+
+interact(show_data, x=widgets.IntSlider(0, 0, 100), y=widgets.Dropdown(options=[1, 2, 3]))
+
+If you tell me exactly which kind of interaction you want to achieve (such as weather inquiry, data input, button operation, etc.), I can provide more specific templates or logics.
+You said:
+Is there a text display box component, that is, one without user interaction and only displaying text
+ChatGPT said:
+
+Yes, there are indeed components dedicated to displaying static text in ipywidgets. You can achieve text display (without user interaction) in the following several ways:
+✅ Option 1: widgets.Label
+
+import ipywidgets as widgets
+from IPython.display import display
+
+label = widgets.Label(value=" This is a static text label." )
+display(label)
+
+✅ Purpose: To display a concise line of text
+
+❌ does not support line breaks or rich text formatting
+
+✅ Method 2: widgets.HTML (supports HTML format, suitable for rich text)
+
+html_text = widgets.HTML(
+value="<h3 style='color:blue'> Welcome to use the interactive system </h3><p> Here is the detailed explanatory text. </p>"
+)
+display(html_text)
+
+✅ supports multiple lines, colors, fonts, paragraphs, HTML structures
+
+✅ Non-interactive, show content only
+
+✅ Method 3: Use print with Output (for dynamic content)
+
+from IPython.display import clear_output
+output = widgets.Output()
+
+with output:
+print(" This is the content Output through output \ nSupports line breaks \ ncan be updated dynamically ")
+
+display(output)
+
+✅ supports multiple lines and line breaks
+
+✅ You can update the content with code (for example, clear and re-output).
+
+✅ can be linked with controls such as buttons to display dynamic content
+
+✅ Summary and Comparison
+Usage: Line-breaking HTML supports updatable recommended uses
+Label ❌ ❌ ✅ shows one line of status or result
+HTML ✅ ✅ ✅ displays rich text, multi-line descriptions
+Output ✅ ❌ (plain text) ✅ for displaying dynamic logs, analysis results, etc
+
+If you tell me your usage scenarios (such as describing a piece of explanatory text, result display area, prompt information, etc.), I can recommend the most suitable solution.
+You said:
+The character display length here is insufficient. Can the limit be changed or the layout be set
+ChatGPT said:
+
+In your Dropdown menu control, the description text (description=' Predicted days (1-5 days) : ') has been truncated. This is because ipywidgets limits the display width of the control by default, especially the description part.
+
+You can customize the width, alignment, etc. by setting the layout parameter.
+✅ Solution: Increase the display width of the descriptive text
+
+Modify as follows:
+
+import ipywidgets as widgets
+from IPython.display import display
+
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='300px') # Set the overall width
+)
+display(dropdown)
+
+✅ Further: Set the label (description) width + control width
+
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='400px'), # Overall control width
+style={'description_width': '150px'} # The description width on the left
+)
+display(dropdown)
+
+This can enable:
+
+The description text (label) has a wider width to prevent it from being truncated by ellipses.
+
+The drop-down box itself also maintains an appropriate width.
+
+✅ Additional tip: Use HBox or VBox if you want to customize alignment or display multiple controls in the same row
+
+text =widgets. Text(description=" You entered: ", layout=widgets.Layout(width='300px'))
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='400px'),
+style={'description_width': '150px'}
+)
+
+widgets.VBox([text, dropdown]) # Arrange controls vertically
+
+If you have multiple component combinations or specific layout requirements, I can also help you plan the layout together.
+You said:
+Can centering be set
+ChatGPT said:
+
+Sure. In ipywidgets, you can use the Layout parameter in conjunction with containers such as HBox and VBox to achieve the overall centering display of controls. The following are several common "centered display" methods.
+✅ Method 1: Center a single control horizontally
+
+import ipywidgets as widgets
+from IPython.display import display
+
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='400px'),
+style={'description_width': '150px'}
+)
+
+# Use Box and set justify_content to center to achieve horizontal centering
+centered = widgets.HBox([dropdown], layout=widgets.Layout(justify_content='center'))
+display(centered)
+
+✅ Method 2: Center multiple controls vertically + horizontally
+
+text =widgets. Text(description=" You entered: ", layout=widgets.Layout(width='300px'))
+dropdown = widgets.Dropdown(
+options=['1', '2', '3', '4', '5'],
+value='1',
+description=' Predicted number of days (1-5 days) : '
+layout=widgets.Layout(width='400px'),
+style={'description_width': '150px'}
+)

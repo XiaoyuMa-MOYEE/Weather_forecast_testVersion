@@ -1,0 +1,92 @@
+# Output daily weather (with priority given to data from 12:00)
+print(f" city: {data['city']['name']}\n")
+for date, items in list(forecast_by_day.items())[:max_day]: # Up to 5 days
+# Select 12:00 or the default first one
+mid = next((x for x in items if "12:00" in x[0]), items[0])
+print(f"{date} : {mid[2]}, {mid[1]}°C")
+I hope this function returns a JSON. How can I add it
+ChatGPT said:
+
+You want this code to return a result in JSON format instead of printing it directly. That's very good. This is more convenient for programmatic use, front-end transmission or file writing.
+
+The following is the rewritten version of your logic, with the addition of JSON construction and return functions:
+✅ The rewritten version (returns JSON data)
+
+import requests
+from collections import defaultdict
+
+def get_forecast_json(city, api_key, max_day=5):
+Url = "https://api.openweathermap.org/data/2.5/forecast"
+params = {
+"q": city,
+"appid": api_key,
+"units": "metric",
+"lang": "zh_cn"
+}
+
+response = requests.get(url, params=params)
+data = response.json()
+
+if response.status_code ! = 200:
+return {
+"status": "error",
+"message": data.get("message", "Unknown error ")
+}
+
+forecast_by_day = defaultdict(list)
+
+# Organize the data from every 3 hours to every day
+for item in data["list"]:
+date = item["dt_txt"].split(" ")[0]
+time = item["dt_txt"]
+temp = item["main"]["temp"]
+desc = item["weather"][0]["description"]
+forecast_by_day[date].append((time, temp, desc))
+
+# Build the JSON output structure
+result = {
+"city": data["city"]["name"],
+"forecast": []
+}
+
+for date, items in list(forecast_by_day.items())[:max_day]:
+# Try to obtain the data of 12:00; otherwise, take the first one of the day
+mid = next((x for x in items if "12:00" in x[0]), items[0])
+result["forecast"].append({
+"date": date,
+"time": mid[0],
+"description": mid[2],
+"temperature": mid[1]
+})
+
+return result
+
+Example of using ✅
+
+api_key = "Your API_KEY"
+data_json = get_forecast_json("Beijing", api_key)
+print(data_json)
+
+You can also format and output it as Chinese JSON using json.dumps(data_json, ensure_ascii=False, indent=2).
+✅ Sample return value structure:
+
+{
+"city": "Beijing",
+"forecast": [
+{
+"date": "2025-05-12",
+"time": "2025-05-12 12:00:00",
+"description": "Sunny"
+"temperature": 25.0
+},
+{
+"date": "2025-05-13",
+"time": "2025-05-13 12:00:00",
+"description": "Cloudy"
+"temperature": 21.3
+}
+...
+]
+}
+
+Do you need me to add the function of saving the.json file for you? Or convert to a pandas table?

@@ -1,0 +1,420 @@
+# The old api code used for obtaining the weather
+' ' '
+Old code for obtaining data using API
+# def test_of_data():
+#     city = "Perth"
+Send a GET request
+Standardized format
+#     # response = requests.get(f'https://wttr.in/{city}? 3&format=%l:+%c+%t+%C+%w')
+# # %l: Address
+# # %c: Current weather icon
+# # %t: Temperature
+# # %C: Weather description
+# # %w: Wind speed
+Output the response content
+#
+Access the default format
+#     response = requests.get(f'https://wttr.in/{city}? format=j1')
+#     data = response.json()
+Output complete data for observing the data format
+#     print(data)
+Access the data for the next three days
+#     for day in data['weather']:
+#         date = day['date']
+#         maxtemp = day['maxtempC']
+#         mintemp = day['mintempC']
+# description = day['hourly'][4]['weatherDesc'][0]['value'] # Noon weather
+#         print(f"{date}: {description}, {mintemp}°C ~ {maxtemp}°C")
+#         print(len(data['weather']))
+' ' '
+from collections import defaultdict
+
+import requests
+
+
+# Obtain weather data (return JSON data)
+def get_weather_forecast(city, max_day):
+"" "
+Each function needs to contain a documentation description, which includes the function description, input and output examples
+:param city: The name of a city
+param max_day: A positive integer ranging from 1 to 5
+"" "
+# api's key
+api_key = "56d26083c4e5d4828784871da1b7b0b3"
+# api
+Url = "https://api.openweathermap.org/data/2.5/forecast"
+params = {"q": city, "appid": api_key, "units": "metric", "lang": "zh_cn" # todo: Modify language
+}
+try:
+response = requests.get(url, params=params)
+If there is no response, an exception will be thrown
+response.raise_for_status()
+data = response.json()
+# Try to Output
+# print(data)
+
+if response.status_code ! = 200:
+print(" Request Failed :", data.get("message", "Unknown error "))
+return None
+
+# Organize the weather data for every three hours by day
+forecast_by_day = defaultdict(list)
+for item in data["list"]:
+# Date
+date = item["dt_txt"].split(" ")[0]
+# Temperature
+temp = item["main"]["temp"]
+# Description
+desc = item["weather"][0]["description"]
+# Wind Speed
+speed = item["wind"]["speed"]
+# Humidity
+humidity = item["main"]["humidity"]
+# Precipitation rate
+pop = item.get("pop", 0)
+time = item["dt_txt"]
+forecast_by_day[date].append((time, temp, desc, speed, humidity, pop))
+
+# Output daily weather (with priority given to data from 12:00)
+# print(f" city: {data['city']['name']}")
+result = {"city": data["city"]["name"], "forecast": []}
+for date, items in list(forecast_by_day.items())[:max_day]: # Up to 5 days
+# Select 12:00 or the default first one
+mid = next((x for x in items if "12:00" in x[0]), items[0])
+# Test Statement
+# print (f "date: {date}, weather conditions: {mid [2]}, the temperature: {mid [1]} ° C, wind speed: {mid [3]}, humidity: {mid [4]}, precipitation rate: {mid [5]}")
+
+result["forecast"].append(
+{"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+"humidity": mid[4], "pop": mid[5]
+
+})
+
+return result, forecast_by_day # result is the weather overview and data is the specific weather data, which is used to obtain the line graph
+Except requests. Exceptions. RequestException as e: # capture all requests related abnormalities
+print(f" Network request failed: Please check the network link \n{e}")
+return None # Returns the failed return value
+Here is my code.
+import ipywidgets as widgets
+
+from IPython.display import display
+
+
+def run_forecast_ui():
+html_text = widgets.HTML(
+value="<h2 style='color:#66ccff'> Welcome to use the interactive system </h2><p> A simple prediction system. </p>"
+)
+
+city = widgets.Text(
+value = "perth",
+placeholder=' Please enter the city '
+description=' City Name: '
+disabled=False
+)
+
+max_day = widgets.Dropdown(
+options=[1, 2, 3, 4, 5],
+value=5,
+description=' Expected number of predicted days (1-5 days) : '
+layout=widgets.Layout(width='300px'),
+style={'description_width': '150px'}
+)
+
+question_input = widgets.Text(
+value = "rain",
+placeholder=' Please enter the question '
+description=' What weather questions would you like to ask: '
+disabled=False,
+layout=widgets.Layout(width='300px'),
+style={'description_width': '150px'}
+)
+
+predict_button = widgets.Button(
+description=' Prediction '
+button_style='',
+tooltip=' Click on me '
+icon='check'
+)
+
+exit_button = widgets.Button(
+description=' Exit '
+button_style='danger',
+tooltip=' End the program '
+icon='sign-out-alt'
+)
+
+output = widgets.Output()
+
+# Click the button to respond
+def on_predict_click(b):
+output.clear_output()
+
+city_name = city.value.strip()
+question = question_input.value.strip()
+day = int(max_day.value)
+
+city.value = ''
+question_input.value = ''
+max_day.value = 5
+
+_, _, _, index = validate_inputs(city_name, day, question)
+
+with output:
+if index == 0:
+print("❌ is incorrect. Please re-enter: ")
+print(f" City: {city_name}")
+print(f" days: {day}")
+print(f" question: {question}")
+else:
+print("✅ Enter and the chart will be generated below ")
+
+try:
+line_chart(question, city_name, day)
+except Exception as e:
+print("🚫 line_chart failed to execute: ", e)
+
+
+
+def on_exit_click(b):
+output.clear_output()
+ui_box.close()
+with output:
+print(" Exited the system. Thank you for using it!" )
+
+predict_button.on_click(on_predict_click)
+exit_button.on_click(on_exit_click)
+
+# Wrap all controls to facilitate unified close() when exiting
+ui_box = widgets.VBox([html_text, city, max_day, question_input,
+widgets.HBox([predict_button, exit_button]),
+output])
+display(ui_box)
+
+When the name of the city entered by the user cannot be found, instead of returning an error code to the user, I want to prompt the user that they have entered an error
+ChatGPT said:
+
+To prompt the user for an input error when the city name entered by the user cannot be found, you can conduct a simple verification before calling the weather API to check whether the returned response contains valid city data. If there is no valid data, prompt the user that the input is incorrect.
+
+You can make modifications in the get_weather_forecast function to give more friendly error prompts when the city cannot be found.
+
+The modified code is as follows:
+
+# Obtain weather data (return JSON data)
+def get_weather_forecast(city, max_day):
+"" "
+Each function needs to contain a documentation description, which includes the function description, input and output examples
+:param city: The name of a city
+param max_day: A positive integer ranging from 1 to 5
+"" "
+# api's key
+api_key = "56d26083c4e5d4828784871da1b7b0b3"
+# api
+Url = "https://api.openweathermap.org/data/2.5/forecast"
+params = {"q": city, "appid": api_key, "units": "metric", "lang": "zh_cn" # todo: Modify language
+}
+try:
+response = requests.get(url, params=params)
+If there is no response, an exception will be thrown
+response.raise_for_status()
+data = response.json()
+
+if response.status_code ! = 200:
+print(" Request Failed :", data.get("message", "Unknown error "))
+return None
+
+# Check whether the returned data contains valid city information
+if "city" not in data:
+print(f" city '{city}' cannot be found. Please check if the input is correct." )
+return None
+
+# Organize the weather data for every three hours by day
+forecast_by_day = defaultdict(list)
+for item in data["list"]:
+# Date
+date = item["dt_txt"].split(" ")[0]
+# Temperature
+temp = item["main"]["temp"]
+# Description
+desc = item["weather"][0]["description"]
+# Wind Speed
+speed = item["wind"]["speed"]
+# Humidity
+humidity = item["main"]["humidity"]
+# Precipitation rate
+pop = item.get("pop", 0)
+time = item["dt_txt"]
+forecast_by_day[date].append((time, temp, desc, speed, humidity, pop))
+
+# Output daily weather (with priority given to data from 12:00)
+result = {"city": data["city"]["name"], "forecast": []}
+for date, items in list(forecast_by_day.items())[:max_day]: # Up to 5 days
+# Select 12:00 or the default first one
+mid = next((x for x in items if "12:00" in x[0]), items[0])
+
+result["forecast"].append(
+{"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+"humidity": mid[4], "pop": mid[5]})
+
+return result, forecast_by_day # result is the weather overview and data is the specific weather data, which is used to obtain the line graph
+Except requests. Exceptions. RequestException as e: # capture all requests related abnormalities
+print(f" Network request failed: Please check the network link \n{e}")
+return None # Returns the failed return value
+
+In this code, we have added the following verifications:
+
+Check if the city is valid: By checking if the returned data contains the "city" field, if this field is not present, it indicates that the input city is invalid.
+
+Friendly error prompt: If the city is invalid, return a prompt message such as "City 'xxx' cannot be found". Please check if the input is correct instead of directly returning an error code.
+
+In this way, when users enter an invalid city name, they will receive a clear prompt instead of seeing an error code.
+You said:
+I called this function elsewhere. How to solve the error of modifying it like result, forecast_by_day = get_weather_forecast(city, max_day)
+ChatGPT said:
+
+If you encounter an error when calling the get_weather_forecast function, it might be because when the city is invalid, the function returns None, which can lead to unpacking failure. To avoid this problem, we can check whether the return value is None when calling the function and handle it according to the situation.
+Modification method:
+
+When calling the get_weather_forecast function, first check whether the return value is None, and then unpack. Specifically, a condition judgment can be added during the post-processing of the call, and unpacking will only be performed when the return value is not None.
+
+The modified part of the calling code:
+
+result, forecast_by_day = None. None # is initialized to None to avoid unpacking failure
+
+# Call Function
+response = get_weather_forecast(city, max_day)
+
+# Check whether the returned response is None
+if response:
+result, forecast_by_day = response
+else:
+print(" Weather data cannot be obtained. Please check the entered city name or network connection." )
+# More processing can be added here as needed, such as prompting the user to re-enter the city, etc
+
+Explanation:
+
+After calling get_weather_forecast(city, max_day), check whether its return value is None.
+
+If the returned data is valid (i.e., None), unpack result and forecast_by_day.
+
+If None is returned, output the error prompt message and avoid unpacking errors.
+
+In this way, errors caused by attempting to unpack None when the city is invalid can be prevented.
+You said:
+My call is rather complicated. Is there a simpler way to handle it
+ChatGPT said:
+
+If your calling logic is rather complex, you can handle possible errors by using Python's try-except statement, which can avoid manually checking the return value of each call.
+More simplified processing method:
+
+You can handle errors directly when the function is called without having to check the return value each time it is called. By capturing the situation where None is returned, you can simplify the code structure.
+
+Modified example:
+
+try:
+result, forecast_by_day = get_weather_forecast(city, max_day)
+if result is None: # Further check the return value
+raise ValueError(" Weather data cannot be obtained. The city name may be invalid." )
+except ValueError as e:
+print(f" error: {e}")
+except Exception as e:
+print(f" Other errors occurred: {e}")
+
+Explanation:
+
+try-except block: Attempt to call the get_weather_forecast function and unpack the return value.
+
+ValueError exception: If the return value is None, explicitly throw an exception by raising ValueError, indicating that the weather data cannot be obtained.
+
+General Exception catching: except exception catches other types of exceptions to prevent the program from crashing.
+
+In this way, you can concentrate error handling in one place without having to conduct additional checks each time it is called.
+You said:
+
+result["forecast"].append(
+{"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+"humidity": mid[4], "pop": mid[5]
+
+})
+
+return result, forecast_by_day # result is the weather overview and data is the specific weather data, which is used to obtain the line graph
+Except requests. Exceptions. RequestException as e: # capture all requests related abnormalities
+print(f" Request failed: It might be an error in the city name or network. Please re-enter \n{e}")
+return None # Returns the failed return value
+This is my error code. I hope it only shows that the request failed: it might be a city name error or a network error. Please re-enter, without showing the system's error message. How can this be achieved
+ChatGPT said:
+
+You can control the error output by using logging or simple print in the except statement to avoid printing the detailed error information of the system. By capturing requests. Exceptions. RequestException, you can only display a custom error message and not the system error stack.
+Modified code:
+
+import requests
+
+# Obtain weather data (return JSON data)
+def get_weather_forecast(city, max_day):
+"" "
+Each function needs to contain a documentation description, which includes the function description, input and output examples
+:param city: The name of a city
+param max_day: A positive integer ranging from 1 to 5
+"" "
+# api's key
+api_key = "56d26083c4e5d4828784871da1b7b0b3"
+# api
+Url = "https://api.openweathermap.org/data/2.5/forecast"
+params = {"q": city, "appid": api_key, "units": "metric", "lang": "zh_cn" # todo: Modify language
+}
+try:
+response = requests.get(url, params=params)
+If there is no response, an exception will be thrown
+response.raise_for_status()
+data = response.json()
+
+if response.status_code ! = 200:
+print(" Request Failed :", data.get("message", "Unknown error "))
+return None
+
+# Check whether the returned data contains valid city information
+if "city" not in data:
+print(f" city '{city}' cannot be found. Please check if the input is correct." )
+return None
+
+# Organize the weather data for every three hours by day
+forecast_by_day = defaultdict(list)
+for item in data["list"]:
+# Date
+date = item["dt_txt"].split(" ")[0]
+# Temperature
+temp = item["main"]["temp"]
+# Description
+desc = item["weather"][0]["description"]
+# Wind Speed
+speed = item["wind"]["speed"]
+# Humidity
+humidity = item["main"]["humidity"]
+# Precipitation rate
+pop = item.get("pop", 0)
+time = item["dt_txt"]
+forecast_by_day[date].append((time, temp, desc, speed, humidity, pop))
+
+# Output daily weather (with priority given to data from 12:00)
+result = {"city": data["city"]["name"], "forecast": []}
+for date, items in list(forecast_by_day.items())[:max_day]: # Up to 5 days
+# Select 12:00 or the default first one
+mid = next((x for x in items if "12:00" in x[0]), items[0])
+
+result["forecast"].append(
+{"date": date, "time": mid[0], "temperature": mid[1], "description": mid[2], "speed": mid[3],
+"humidity": mid[4], "pop": mid[5]})
+
+return result, forecast_by_day # result is the weather overview and data is the specific weather data, which is used to obtain the line graph
+Except requests. Exceptions. RequestException: # capture all requests related abnormalities
+Only display custom error messages and do not show the detailed error stack of the system
+print(" Request failed: It might be a city name error or network error. Please re-enter ")
+return None # Returns the failed return value
+
+Key modifications:
+
+Exception handling: in the except block, we only capture requests. Exceptions. RequestException abnormalities, not print detailed error information.
+
+Custom error prompt: Use print(" Request failed: It might be a city name error or network error. Please re-enter ") to display a simple error message instead of the system's stack information.
+
+In this way, when a request exception occurs, the system will only output the error message you have defined and will not disclose the specific exception stack information.
+
